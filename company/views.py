@@ -19,9 +19,8 @@ class Login(APIView):
         try:
             email = request.data['email']
             password = request.data['password']
-            user = User.objects.filter(email=email)
+            user = User.objects.filter(Q(email=email) | Q(username=email)).first()
             if user:
-                user = User.objects.get(Q(email=email) | Q(username=email))
                 if not check_password(password, user.password):
                     return functions.formated_response(message="Invalid Credencials!", code=400)
                 refresh = RefreshToken.for_user(user)
