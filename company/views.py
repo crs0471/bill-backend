@@ -38,26 +38,24 @@ class Login(APIView):
 
 
 class Register(APIView):
-    def get(self, request):
-
+    def post(self, request):
         try:
-            user_name = request.data['user_name']
-            email = request.data['email']
-            password = request.data['password']
-            cpassword = request.data['cpassword']
-
+            if not (username := request.data.get('username')):
+                return functions.formated_response(message="User Name is required", code=400)
+            if not (email := request.data.get('email')):
+                return functions.formated_response(message="Email is required", code=400)
+            if not (password := request.data.get('password')):
+                return functions.formated_response(message="Password is required", code=400)
+            if not (cpassword := request.data.get('confirm_password')):
+                return functions.formated_response(message="Confirm Password is required", code=400)
             if password != cpassword:
                 return functions.formated_response(message="Password and Confirm Password not Match", code=400)
             
-
-            user = User.objects.filter(Q(username=user_name) | Q(email=email))
-            if not user:
-                user = User(email=email, username=user_name, password=password)
-                user.save()
-                return functions.formated_response(message="Register Successful", code=200)
-
-            else:
+            if User.objects.filter(Q(username=username) | Q(email=email)).exists():
                 return functions.formated_response(message="User Already Exists", code=400, dev_message="User name already exists.")
-        
+
+            user = User.objects.create(username=username, email=email, password=make_password(password))            
+            return functions.formated_response(message="Register Successful", code=200)
+
         except Exception as err:
             return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
