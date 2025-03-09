@@ -20,5 +20,16 @@ from .views import *
 
 urlpatterns = [
     path('login', Login.as_view(), name='check'),
-    path('register', Register.as_view(), name='check'),
+    path('register', Register.as_view(), name='register'),
+
+    # company
+
+    # company/ :post: create company {}
+    # company/ :get: list all company : [{},{},{}]
+    # company/<id>/ :get:  object  {}
+    # company/<id>/ :patch:  object  {}
+    # company/<id>/ :delete:  ""
+
+    path('company', Companyview.as_view(), name='company'),
+    path('company/<int:id>', Updatecompanyview.as_view(), name="update_company"),
 ]

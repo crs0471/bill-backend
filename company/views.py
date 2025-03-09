@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from django.contrib.auth.hashers import check_password, make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
-
+from rest_framework.permissions import IsAuthenticated
+from company.models import Company
 
 
 
@@ -56,6 +57,111 @@ class Register(APIView):
 
             user = User.objects.create(username=username, email=email, password=make_password(password))            
             return functions.formated_response(message="Register Successful", code=200)
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+        
+
+class Companyview(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        try:
+            user = request.user
+            if not (name := request.data.get('name')):
+                return functions.formated_response(message="Name is required", code=400)
+            if not (email := request.data.get('email')):
+                return functions.formated_response(message="Email is required", code=400)
+            if not (phone := request.data.get('phone')):
+                return functions.formated_response(message="phone is required", code=400)
+            if not (gst_number := request.data.get('gst_number')):
+                return functions.formated_response(message="gst number is required", code=400)
+            if not (address := request.data.get('address')):
+                return functions.formated_response(message="address is required", code=400)
+    
+            user = Company.objects.create(user=user , name=name, email=email, phone=phone, gst_number=gst_number, address=address)            
+            return functions.formated_response(message="Company Created Successful", code=200)
+        
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+        
+
+    def get(self, request):
+        try:
+            user = request.user
+            print("dfsf : ", user)
+            user_company = Company.objects.filter(user=user)
+            companys = []
+            for company in user_company:
+                com = {}
+                print("ERR : ", company.user)
+                com['name'] = company.name
+                com['email'] = company.email
+                com['phone'] = company.phone
+                com['gst_number'] = company.gst_number
+                com['address'] = company.address
+                companys.append(com)
+
+            return functions.formated_response(message="Company List", code=200, dict_={"companys":companys})
+ 
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+class Updatecompanyview(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id):
+        try:
+            user = request.user
+            company = Company.objects.filter(Q(user=user) & Q(id=id)).values()
+            company = company[0]
+            com = {
+                'id':company['id'],
+                'name':company['name'],
+                'email':company['email'],
+                'phone':company['phone'],
+                'gst_number': company['gst_number'],
+                'address' : company['address'],
+            }
+
+            return functions.formated_response(message="Company List", code=200, dict_={"company":com})
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+    def delete(self, request, id):
+        try:    
+            user = request.user
+            Company.objects.filter(Q(user=user) & Q(id=id)).delete()
+            return functions.formated_response(message="Deleted Successfull", code=200)
+        
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+    def patch(self, request, id):
+        try:
+            user = request.user
+            company = Company.objects.filter(Q(user=user) & Q(id=id))[0]
+
+            if not company:
+                return functions.formated_response(message="Company not exists", code=200)
+
+            if name := request.data.get('name'):
+                company.name = name
+            if email := request.data.get('email'):
+                company.email = email
+            if phone := request.data.get('phone'):
+                company.phone = phone
+            if gst_number := request.data.get('gst_number'):
+                company.gst_number = gst_number
+            if address := request.data.get('address'):
+                company.address = address
+            
+            company.save()
+            return functions.formated_response(message="Updated Successfull", code=200)
 
         except Exception as err:
             return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
