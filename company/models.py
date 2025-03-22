@@ -11,3 +11,13 @@ class Company(models.Model):
     address = models.CharField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+class Client(models.Model):
+    company = models.ForeignKey(to=Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    gstin = models.CharField(max_length=50)
+    email = models.CharField(max_length=50)
+    address = models.CharField(max_length=150)
+    phone = models.CharField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

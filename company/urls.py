@@ -32,4 +32,7 @@ urlpatterns = [
 
     path('company', Companyview.as_view(), name='company'),
     path('company/<int:id>', Updatecompanyview.as_view(), name="update_company"),
+
+    path('client', Clientview.as_view(), name='client'),
+    path('client/<int:id>', Updateclientview.as_view(), name='client'),
 ]

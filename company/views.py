@@ -8,7 +8,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
-from company.models import Company
+from company.models import Company, Client
 
 
 
@@ -160,3 +160,124 @@ class Updatecompanyview(APIView):
 
         except Exception as err:
             return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+
+
+
+
+# ====================== CLIENT CRUD ====================================
+
+class Clientview(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            if not (name := request.data.get('name')):
+                return functions.formated_response(message="Name is required", code=400)
+            if not (gstin := request.data.get('gstin')):
+                return functions.formated_response(message="gstin is required", code=400)
+            if not (address := request.data.get('address')):
+                return functions.formated_response(message="Address is required", code=400)
+            if not (email := request.data.get('email')):
+                return functions.formated_response(message="email is required", code=400)
+            if not (phone := request.data.get('phone')):
+                return functions.formated_response(message="Phone is required", code=400)
+            if not (company_id := request.data.get('company_id')):
+                return functions.formated_response(message="Company id is required", code=400)
+            
+            if not Company.objects.filter(user=request.user, id=company_id).exists():
+                return functions.formated_response(message="Company not exists for this user", code=400)
+            
+            
+            client = Client.objects.create(company_id=company_id, name=name, email=email, gstin=gstin, address=address, phone=phone)            
+            return functions.formated_response(message="Register Successful", code=200)
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+      
+
+    def get(self, request):
+        try:
+            if not (company_id := request.data.get('company_id')):
+                return functions.formated_response(message="Company id is required", code=400)
+            if not Company.objects.filter(user=request.user, id=company_id).exists():
+                return functions.formated_response(message="Company not exists for this user", code=400)
+            
+            clients = Client.objects.filter(company_id=company_id)
+            client = list(clients.values())
+            return functions.formated_response(message="Clients Fetched Successfully.", code=200, dict_=client)
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+
+class Updateclientview(APIView):
+    permission_classes = [IsAuthenticated]
+
+
+
+    def get(self, request, id):
+        try:
+
+            client = Client.objects.filter(id=id).values().first()
+            if not client:
+                return functions.formated_response(message="Client not exists", code=400)
+            
+            company = Company.objects.filter(id=client['company_id'], user_id=request.user).first()
+            if not company:
+                return functions.formated_response(message="Client not exists", code=400)
+
+            return functions.formated_response(message="Client ID", code=200, dict_=client)
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+        
+
+
+
+    def patch(self, request, id):
+        try:
+            client = Client.objects.filter(id=id).first()  
+            if not client:
+                return functions.formated_response(message="Client not exists", code=200)
+            
+            company = Company.objects.filter(id=client.company_id, user_id=request.user).first()
+            if not company:
+                return functions.formated_response(message="Client not exists", code=400)
+            
+
+            if name := request.data.get('name'):
+                client.name = name
+            if phone := request.data.get('phone'):
+                client.phone = phone
+            if address := request.data.get('address'):
+                client.address = address
+            if gstin := request.data.get('gstin'):
+                client.gstin = gstin
+            if email := request.data.get('email'):
+                client.email = email
+            
+            client.save()
+            return functions.formated_response(message="Updated Successfull", code=200)
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+
+    def delete(self, request, id):
+        try:    
+            client = Client.objects.filter(id=id).first()
+            if not client:
+                return functions.formated_response(message="Client not exists", code=400)
+            
+            company = Company.objects.filter(id=client.company_id, user_id=request.user).first()
+            if not company:
+                return functions.formated_response(message="Client not exists", code=400)
+            
+            client.delete()
+            return functions.formated_response(message="Deleted Successfull", code=200)
+        
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+    
