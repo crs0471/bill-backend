@@ -62,6 +62,8 @@ class Register(APIView):
             return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
         
 
+# ====================== COMPANY CRUD ====================================
+
 class Companyview(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -79,6 +81,9 @@ class Companyview(APIView):
                 return functions.formated_response(message="gst number is required", code=400)
             if not (address := request.data.get('address')):
                 return functions.formated_response(message="address is required", code=400)
+
+            if Company.objects.filter(user=user, name=name).exists():
+                return functions.formated_response(message="Company Already Exists", code=400, dev_message="Company name already exists.")
     
             user = Company.objects.create(user=user , name=name, email=email, phone=phone, gst_number=gst_number, address=address)            
             return functions.formated_response(message="Company Created Successful", code=200)
@@ -93,18 +98,8 @@ class Companyview(APIView):
             user = request.user
             print("dfsf : ", user)
             user_company = Company.objects.filter(user=user)
-            companys = []
-            for company in user_company:
-                com = {}
-                print("ERR : ", company.user)
-                com['name'] = company.name
-                com['email'] = company.email
-                com['phone'] = company.phone
-                com['gst_number'] = company.gst_number
-                com['address'] = company.address
-                companys.append(com)
-
-            return functions.formated_response(message="Company List", code=200, dict_={"companys":companys})
+            companys = list(user_company.defer('created_at', 'updated_at', 'user').values())
+            return functions.formated_response(message="Companies Fetched Successfully.", code=200, dict_=companys)
  
 
         except Exception as err:
