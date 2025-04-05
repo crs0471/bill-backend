@@ -18,7 +18,7 @@ class Bill(models.Model):
     updated_at = models.DateField(auto_now=True)
 
 class Bill_product(models.Model):
-    bill = models.ForeignKey(to=Bill, on_delete=models.CASCADE)
+    bill = models.ForeignKey(to=Bill, on_delete=models.CASCADE, related_name='products')
     price = models.FloatField()
     quantity = models.FloatField()
     code = models.CharField(max_length=100)

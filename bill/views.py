@@ -4,11 +4,69 @@ from rest_framework.views import APIView
 from helper import functions
 from company.models import Company, Client
 from bill.models import Bill, Bill_product, Bill_product_master
+from bill.serializers import BillSerializer
 
 
 # Create your views here.
+
+
+
+
+class Master_productview(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            master_bills_qs = Bill_product_master.objects.filter(company_id__user_id=request.user)
+
+            # if comapny if filter
+            if (company_id := request.GET.get('company_id')):
+                master_bills_qs = master_bills_qs.filter(company_id=company_id)
+
+            # if search
+            if search := request.GET.get('search'):
+                master_bills_qs = master_bills_qs.filter(name__icontains=search)
+
+            return functions.formated_response(message="Bill Master Product of Company", code=200, dict_=master_bills_qs.values())
+
+            
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+        
+
+
+
+
+
+
 class Billview(APIView):
     permission_classes = [IsAuthenticated]
+
+    # listing, GET method , filter comp_id, client_id,  search(bill no)
+    def get(self, request):
+        try:
+
+            if not Company.objects.filter(user=request.user).exists():
+                return functions.formated_response(message="Company not exists for this user", code=400)
+            
+            bill = Bill.objects.filter(company_id__user = request.user)
+            if company_id := request.query_params.get('company_id'):
+                bill = bill.filter(company_id = company_id)
+            if client_id := request.query_params.get('client_id'):
+                bill = bill.filter(client_id = client_id)
+            if bill_no := request.query_params.get('bill_no'):
+                bill = bill.filter(bill_no = bill_no)
+
+            serializer = BillSerializer(bill, many=True)
+            return functions.formated_response(message="Bill Successfully Retrieved", code=200, dict_=serializer.data)
+            
+
+
+        except Exception as err:
+            return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
+
+
+
 
 
     def post(self, request):
@@ -61,10 +119,10 @@ class Billview(APIView):
             bill.save()
 
             for bill_pro in request.data.get('bill_products'):
-                bill_product = Bill_product(bill=bill.id, price=bill_pro['price'], quantity=bill_pro['quantity'], code=bill_pro['code'], name=bill_pro['name'])
+                bill_product = Bill_product(bill=bill, price=bill_pro['price'], quantity=bill_pro['quantity'], code=bill_pro['code'], name=bill_pro['name'])
                 bill_product.save()
                 if str(bill_pro['new']) == "1":
-                    bill_product_master = Bill_product_master(company=company_id, name=bill_pro['name'], price=bill_pro['price'], code=bill_pro['code'])
+                    bill_product_master = Bill_product_master(company_id=company_id, name=bill_pro['name'], price=bill_pro['price'], code=bill_pro['code'])
                     bill_product_master.save()
 
             return functions.formated_response(message="Bill Successfully Saved", code=200)

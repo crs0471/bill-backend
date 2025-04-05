@@ -19,6 +19,9 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
-    path('', Billview.as_view(), name='client'),
+    # get , list master products defalut all, qp-comp_id , path = 'master-products/'
+    path('master-products/', Master_productview.as_view(), name='master-product'),
+    path('', Billview.as_view(), name='bill'),
+    # 
    
 ]
