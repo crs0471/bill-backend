@@ -96,8 +96,9 @@ class Companyview(APIView):
     def get(self, request):
         try:
             user = request.user
-            print("dfsf : ", user)
             user_company = Company.objects.filter(user=user)
+            if search := request.query_params.get('search'):
+                user_company = user_company.filter(Q(name__icontains=search) | Q(email__icontains=search) | Q(phone__icontains=search) | Q(gst_number__icontains=search))
             companys = list(user_company.defer('created_at', 'updated_at', 'user').values())
             return functions.formated_response(message="Companies Fetched Successfully.", code=200, dict_=companys)
  
@@ -122,7 +123,7 @@ class Updatecompanyview(APIView):
                 'address' : company['address'],
             }
 
-            return functions.formated_response(message="Company List", code=200, dict_={"company":com})
+            return functions.formated_response(message="Company List", code=200, dict_=com)
 
         except Exception as err:
             return functions.formated_response(message="Something went wrong!", code=500, dev_message=str(err))
@@ -198,12 +199,11 @@ class Clientview(APIView):
 
     def get(self, request):
         try:
-            if not (company_id := request.data.get('company_id')):
-                return functions.formated_response(message="Company id is required", code=400)
-            if not Company.objects.filter(user=request.user, id=company_id).exists():
-                return functions.formated_response(message="Company not exists for this user", code=400)
-            
-            clients = Client.objects.filter(company_id=company_id)
+            clients = Client.objects.filter(company__user=request.user)
+            company_id = request.query_params.get('company_id')
+            if company_id:
+                clients = clients.filter(company_id=company_id)
+                
             client = list(clients.values())
             return functions.formated_response(message="Clients Fetched Successfully.", code=200, dict_=client)
 
